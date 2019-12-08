@@ -1,0 +1,54 @@
+
+A common problem when designing a programming language or other text format is references.
+For instance, here is some pseudocode with line numbers:
+
+    00: var x = 3
+    01:
+    02: fun f(x){
+    03:     print x + 1
+    04: }
+    05:
+    06: fun g(){
+    07:     print f(x * 2)
+    08: }
+
+Let's say the intended references are:
+
+    "x" on line 03 refers to "x" on line 02
+    "x" on line 07 refers to "x" on line 00
+    "f" on line 07 refers to "f" on line 02
+
+Now let's go further and posit inter-file references:
+
+    "print" on lines 03, 07 refer to "print" on line 231 in file "io.src"
+
+So we could say that a token can be uniquely specified by (file, line, char).
+Now a useful system would be one which allows all references within it to be resolved, with a minimum of parsing.
+So, we might define a language (not a programming language) which allows definition of and references to names, including within files.
+
+    00: from "file1.src" import a, b, c
+    01:
+    02: var x, y
+    03:
+    04: private var z = bla bla a etc
+    05:
+    06: fun f(x, y){
+    07:     bla bla x c bla
+    08:     lambda(x, y){ bla bla z }
+    09: }
+    10:
+    11: private fun g(x){
+    12:     etc etc etc x y
+    13: }
+
+Now, the tokens "bla", "etc", etc need not be given any meaning, but the structure of definitions and references is hopefully clear.
+The "private" vars and funs are invisible to other files (can't be imported).
+There are some scoping rules in effect, so that the "x" on line 07 refers to the "x" on line 06, not that on line 02.
+However, much of the text can be ignored (such as "bla", "etc").
+A parser for this language would build the following data structures:
+    A set of filenames
+    A set of definitions (filename, line, char)
+    A set of references (filename, line, char, definition)
+
+This parser could be used as part of an implementation of more complicated languages designed on top of the simple definition/reference language.
+
