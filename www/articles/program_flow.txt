@@ -1,7 +1,8 @@
 
 Program Flow
+============
 
-
+Consider the programming language Brain****, here referred to as BF for propriety.
 The classic "Hello World" program (which outputs "Hello World" and exits) may be implemented in BF like this:
 
     +[-[<<[+[--->]-[<<<]]]>>>-]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
@@ -41,7 +42,7 @@ In this encoding, the "[]" operators are inferred from the relative indentation 
         >>>-
     >-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
 
-With the "[" and "]" characters removed, the program appears to consist of isolated nodes, suggesting an encoding as a graph:
+With the "[" and "]" characters removed, the program appears to consist of isolated snippets of code, suggesting an encoding as a graph:
 
     (+)===(-)===(<<)===(+)===(--->)
     |     |     |      |    /
