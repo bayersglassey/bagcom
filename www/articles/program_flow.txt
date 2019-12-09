@@ -207,3 +207,82 @@ The main program then consists of these variables in the order needed to output 
     Hello World
     ABCCDEFDGCH
 
+Now, this idea of a group of programs referring to each other sounds a lot like a graph.
+Taking again this example:
+
+    +A
+    Where:
+    A = (-BA|>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
+    B = (<<CB|>>>-)
+    C = (+DC|)
+    D = (--->D|-E)
+    E = (<<<E|)
+
+We might represent it as the following graph:
+
+    NOTE:
+    There are multiple kinds of edge, and they are directed.
+    Unfortunately none of that is encoded in this ASCII representation.
+    The if/else/endif operator is represented by a pair of outgoing edges.
+    The other edges represent variable references - these could also be thought of as "subroutine calls".
+    If we wanted to represent jumps instead of calls, we could do so for this example,
+    but we would need to add more edges...
+
+       (+)
+        |
+        |        ====
+        |       /    |
+    A: (if/else)===(-)===================================
+                \                                        \
+                 ==(>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)  |
+                                                         /
+          ===============================================
+         /
+        /        ============
+       |        /            |
+    B: (if/else)======(<<<)==
+                \          \
+                 ==(>>>-)   |
+                           /
+          =================
+         /
+        /        =======
+       |        /       |
+    C: (if/else)===(+)==
+                \     \
+                 ==()  |
+                      /
+          ============
+         /
+        /        ==========
+       |        /          |
+    D: (if/else)===(--->)==
+                \
+                 ==(-)==
+                        |
+          ==============
+         /
+        /        =========
+       |        /         |
+    E: (if/else)===(<<<)==
+                \
+                 ==()
+
+This representation suggests an encoding of a BF program as a set of connected data structures.
+For instance, in C:
+
+    struct bf_node {
+
+        /* code: string of non-looping characters, e.g. "<>-+,." */
+        const char *code;
+        int code_len;
+
+        /* if_branch: taken if current cell's value is true (nonzero) */
+        /* else_branch: taken if if_branch is not taken */
+        /* NOTE: if if_branch is NULL, else_branch is always taken (it
+        becomes an unconditional branch) */
+        struct bf_node *if_branch;
+        struct bf_node *else_branch;
+
+    };
+
