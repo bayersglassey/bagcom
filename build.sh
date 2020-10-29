@@ -165,6 +165,7 @@ rmdir "$SITE_OUTDIR/root"
 
 # Copy static assets
 cp -r img/ "$SITE_OUTDIR/img/"
+cp -r style/ "$SITE_OUTDIR/style/"
 
 # Doooone!
 echo "$THICKLINES" >&2

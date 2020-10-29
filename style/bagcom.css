@@ -1,0 +1,13 @@
+.panel {
+    max-width: 640px;
+
+    margin: auto;
+    margin-bottom: 32px;
+
+    border: solid 1px #eee;
+    border-radius: 6px;
+
+    padding: 0 16px;
+
+    overflow: auto; /* So <pre> with lots of stuff can be scrolled */
+}
