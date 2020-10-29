@@ -1,7 +1,4 @@
 
-Program Flow
-============
-
 Consider the programming language Brain****, here referred to as BF for propriety.
 The classic "Hello World" program (which outputs "Hello World" and exits) may be implemented in BF like this:
 
