@@ -18,10 +18,10 @@ LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
 THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
 
 # And so it begins.
-echo "$THICKLINES"
-echo "Building site!"
-echo "Source directory: $SITE_INDIR"
-echo "Output directory: $SITE_OUTDIR"
+echo "$THICKLINES" >&2
+echo "Building site!" >&2
+echo "Source directory: $SITE_INDIR" >&2
+echo "Output directory: $SITE_OUTDIR" >&2
 
 # Create output directory
 rm -rf "$SITE_OUTDIR"
@@ -82,6 +82,7 @@ bagcom_builddir() {
                 echo "Building: $INFILE" >&2
                 echo "Output: $OUTFILE" >&2
                 bagcom_buildfile
+                echo "Done!" >&2
             ;;
             *)
                 echo "Unrecognized action: $ACTION" >&2
@@ -128,8 +129,6 @@ bagcom_buildfile() {
     # $HEADER/$FOOTER/$BODY all got their contents from commend expansion,
     # which removes trailing newlines (which is obnoxious).
     echo -n "$PROCESSED_HEADER$NL$BODY$NL$FOOTER" >"$OUTFILE"
-
-    echo "Done!" >&2
 }
 
 
@@ -150,13 +149,13 @@ do
     bagcom_builddir build "${INDIR%/}"
 done
 
-# Clean up .title files
 echo "$THICKLINES" >&2
-echo "Cleaning output..." >&2
+echo "Finishing up..." >&2
+
+# Clean up .title files
 for INDIR in "$SITE_INDIR"/*/
 do
     OUTDIR="$SITE_OUTDIR/${INDIR#$SITE_INDIR/}"
-    echo "OUTDIR: $OUTDIR"
     rm -f "$OUTDIR"/*.title
 done
 
@@ -164,6 +163,11 @@ done
 mv "$SITE_OUTDIR/root"/* "$SITE_OUTDIR/"
 rmdir "$SITE_OUTDIR/root"
 
+# Copy static assets
+cp -r img/ "$SITE_OUTDIR/img/"
+
 # Doooone!
 echo "$THICKLINES" >&2
 echo "Build complete!" >&2
+echo "Source directory: $SITE_INDIR" >&2
+echo "Output directory: $SITE_OUTDIR" >&2
