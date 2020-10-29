@@ -109,7 +109,7 @@ For instance, in BF an infinite loop can be written using a cell with a "true" v
 
     +[]
 
-However, with "!" and "?" we can also write a program using a cell with a "false" value (that is, 0):
+However, with "!" and "?" we can also write an infinite loop which works on a cell with a "false" value (that is, 0):
 
     a: !a
 
