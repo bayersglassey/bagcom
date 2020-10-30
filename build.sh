@@ -8,6 +8,8 @@ SITE_OUTDIR="dst"
 # Keep a newline around in a variable
 NL='
 '
+# Markdown parser command, we feed it Markdown and expect HTML back
+MARKDOWN="markdown"
 
 # Name of the website we're building
 SITENAME="bayersglassey.com"
@@ -41,22 +43,41 @@ bagcom_builddir() {
     ACTION="$1"
     INDIR="$2"
 
+    # $DIRCONFIGFILE: a file containing metadata about the pages in
+    # $INDIR (for instance, about their "parent" page)
+    DIRCONFIGFILE="$INDIR/dir.config"
+
+    # Variables which can be set by $DIRCONFIGFILE
+    PARENTNAME=""
+    PARENTURL=""
+    CRUMBS=0
+
+    # ...ok, set the variables please
+    . "$DIRCONFIGFILE"
+
+    # Save $CRUMBS for this directory, it will be "inherited" by
+    # child pages (though they can override it)
+    DIRCRUMBS="$CRUMBS"
+
     for INFILE in "$INDIR"/*
     do
         BASENAME="`basename -- "$INFILE"`"
         EXT="${BASENAME##*.}"
 
-        # Only process .txt or .html files
-        test "$EXT" = "txt" -o "$EXT" = "html" || continue
+        # Only process .txt or .html or .md files
+        test "$EXT" = "txt" -o "$EXT" = "html" -o "$EXT" = "md" || continue
 
         OUTFILE="$SITE_OUTDIR/${INFILE#$SITE_INDIR/}"
         OUTFILE="${OUTFILE%.*}.html"
         OUTDIR="`dirname -- "$OUTFILE"`"
 
+        # $CONFIGFILE: a file containing metadata about the page whose
+        # contents are in $INFILE
         CONFIGFILE="$INFILE.config"
 
         # Variables which can be set by $CONFIGFILE
         TITLE=""
+        CRUMBS="$DIRCRUMBS"
         CHILDPAGES_DIR=""
 
         # ...ok, set the variables please
@@ -94,20 +115,46 @@ bagcom_builddir() {
 
 bagcom_buildfile() {
 
-    # We use backtick "`" as the separator in sed's "s" operator, which means
+    # NOTE: We use "@" as the separator in sed's "s" operator, which means
     # cannot use it in a page's title!
     PROCESSED_HEADER="` \
         echo "$HEADER" \
         | sed "s@{TITLE}@$TITLE@" \
         | sed "s@{SITENAME}@$SITENAME@" \
+        | sed "s@{PARENTNAME}@$PARENTNAME@" \
+        | sed "s@{PARENTURL}@$PARENTURL@" \
     `"
 
+    # Remove any unneeded (according to this page's .config file)
+    # breadcrumbs from header
+    if test "$CRUMBS" -lt 2
+    then
+        # Remove (with sed's "d" command) lines which start with "{CRUMB2}"
+        PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed '/^{CRUMB2}/d'`"
+    fi
+    if test "$CRUMBS" -lt 1
+    then
+        # Remove (with sed's "d" command) lines which start with "{CRUMB1}"
+        PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed '/^{CRUMB1}/d'`"
+    fi
+
+    # Remove "{CRUMB1}", "{CRUMB2}" markers
+    PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed 's/{CRUMB[12]}//'`"
+
+    # Slurp page contents
     BODY="`cat "$INFILE"`"
 
     # Wrap the contents of .txt files in <pre>
     if test "$EXT" = "txt"
     then
         BODY="<pre>$BODY</pre>"
+    fi
+
+    # Process .md files as markdown
+    # (Will fail, obviously, if you don't have a markdown parser installed)
+    if test "$EXT" = "md"
+    then
+        BODY="`echo "$BODY" | "$MARKDOWN"`"
     fi
 
     # Automatically generate lists of child pages (as directed by the
