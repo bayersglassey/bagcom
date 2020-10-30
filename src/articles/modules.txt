@@ -34,7 +34,7 @@ In any case, let's say we can uniquely specify any token by (file, line,
 offset, length).
 That is, a filename, a line number (starting at 0), an offset within that line,
 and a token length.
-We could just use (line, offset, length) using an offset within the file, but
+We could just use (file, offset, length) using an offset within the file, but
 it's nicer to see line numbers.
 
 Now a useful system would be one which allows all references within it to be
