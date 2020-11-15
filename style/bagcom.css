@@ -1,3 +1,9 @@
+pre {
+    border-radius: 4px;
+    border: solid 1px #eee;
+    padding: 8px;
+}
+
 .panel {
     max-width: 640px;
 
