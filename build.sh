@@ -11,6 +11,12 @@ NL='
 # Markdown parser command, we feed it Markdown and expect HTML back
 MARKDOWN="markdown"
 
+# Command which converts .fus to .html
+LEXERTOOL="lexertool"
+fus2html() {
+    "$LEXERTOOL" -r --html
+}
+
 # Name of the website we're building
 SITENAME="bayersglassey.com"
 
@@ -75,8 +81,8 @@ bagcom_builddir() {
         BASENAME="`basename -- "$INFILE"`"
         EXT="${BASENAME##*.}"
 
-        # Only process .txt or .html or .md files
-        test "$EXT" = "txt" -o "$EXT" = "html" -o "$EXT" = "md" || continue
+        # Only process files with these extensions
+        test "$EXT" = "txt" -o "$EXT" = "html" -o "$EXT" = "md" -o "$EXT" = "fus" || continue
 
         OUTFILE="$SITE_OUTDIR/${INFILE#$SITE_INDIR/}"
         OUTFILE="${OUTFILE%.*}.html"
@@ -164,6 +170,12 @@ bagcom_buildfile() {
     if test "$EXT" = "md"
     then
         BODY="`echo "$BODY" | "$MARKDOWN"`"
+    fi
+
+    # Process .fus files
+    if test "$EXT" = "fus"
+    then
+        BODY="<pre class=\"fus\">`echo "$BODY" | fus2html`</pre>"
     fi
 
     # Automatically generate lists of child pages (as directed by the
