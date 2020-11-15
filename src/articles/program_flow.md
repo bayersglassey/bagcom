@@ -1,6 +1,7 @@
 
 Consider the programming language Brain****, here referred to as BF
 for propriety.
+
 The classic "Hello World" program (which outputs "Hello World" and exits)
 may be implemented in BF like this:
 
@@ -58,15 +59,21 @@ of isolated snippets of code, suggesting an encoding as a graph:
     (>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
 
 Here nodes are indicated by (...), edges by "=", "|", and "/".
+
 Each node represents some loop-free BF code.
+
 Each edge represents a conditional jump instruction: either "jump if true"
 or "jump if false".
+
 The edges are directed, though neither direction nor type of conditional
 (jump if true/false) are shown, due to the limitations of ASCII representation.
+
 For each "[" in the text encoding, there are 2 edges: a "jump if true" to the
 right, and a "jump if false" downwards.
+
 Also, for each "]" in the text encoding, there are 2 edges: a "jump if true"
 upwards, and a "jump if false" downwards to the left.
+
 We chose not to include 2 empty nodes above (>>>-): those nodes would have
 corresponded to the latter two "]" in "]]]".
 Without them, (>>>-) has 4 incoming edges instead of the usual 2.
@@ -75,7 +82,7 @@ We could split each node into separate nodes for each of its instructions:
 
     (>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
 
-    Becomes:
+    ...becomes:
 
     (>)===(-)===(.)===(-)===(-)===(-)===(    ...etc
 
@@ -96,7 +103,9 @@ First, let's label the nodes with single characters (a, b, c, etc):
     k: >-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
 
 Now let's replace "[" and "]" with conditional jumps.
+
 "?x" means: "if true, jump to label x"
+
 "!x" means: "if false, jump to label x"
 
     a: + !k
@@ -113,6 +122,7 @@ Every "[" becomes a "!", and every "]" becomes a "?".
 
 Now we can write BF programs using "?" and "!", and in fact we can write
 programs which could not be written using "[" and "]".
+
 For instance, in BF an infinite loop can be written using a cell with a
 "true" value (for instance,1):
 
@@ -125,13 +135,16 @@ on a cell with a "false" value (that is, 0):
 
 The syntax with named labels is somehow less satisfying than the austerity
 of BF's "[" and "]".
+
 We could add support for if/else, for instance using "(", "|", and ")" to
 mean "if", "else", and "endif":
 
     ,(..|++++++++++.)
 
 This program gets one character from the input stream.
+
 If the character was not NUL, the program outputs it back twice.
+
 If the character was NUL, the program outputs a newline (ASCII value 10).
 
 We can actually represent "[" and "]" using this if/else/endif syntax --
@@ -150,88 +163,66 @@ We can rewrite this as a recursive definition:
 
 We can encode our "Hello World" program using the following procedure:
 
-    Write out the program.
+1. Write out the program.
 
-    +[-[<<[+[--->]-[<<<]]]>>>-]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
+        +[-[<<[+[--->]-[<<<]]]>>>-]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
 
-    Figure out which parts of the program (of the form "[X]Y") will
-    need recursive definitions:
+2. Figure out which parts of the program (of the form "[X]Y") will
+need recursive definitions:
 
-    +
-    A: [-
-        B: [<<
-            C: [+
-                D: [--->
-                ]-
-                E: [<<<
+        +
+        A: [-
+            B: [<<
+                C: [+
+                    D: [--->
+                    ]-
+                    E: [<<<
+                    ]
                 ]
-            ]
-        ]>>>-
-    ]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
+            ]>>>-
+        ]>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.
 
-    Now write out the definitions:
+3. Now write out the definitions:
 
-    +A
-    Where:
-    A = (-BA|>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
-    B = (<<CB|>>>-)
-    C = (+DC|)
-    D = (--->D|-E)
-    E = (<<<E|)
+        +A
+        Where:
+        A = (-BA|>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
+        B = (<<CB|>>>-)
+        C = (+DC|)
+        D = (--->D|-E)
+        E = (<<<E|)
 
 This suggests a text encoding of BF consisting of the operators "+-<>,.(|)",
 the variables A-Z, and variable definitions.
+
 The first line is the main program; subsequent lines are variable
 definitions, starting with A:
 
-    +A
-    (-BA|>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)
-    (<<CB|>>>-)
-    (+DC|)
+    +A                                             # Main program
+    (-BA|>-.---.>..>.<<<<-.<+.>>>>>.>.<<.<-.)      # Definition of A
+    (<<CB|>>>-)                                    # Definition of B
+    (+DC|)                                         # ...etc
     (--->D|-E)
     (<<<E|)
 
 In this example, all variable values were (...), but that need not be
 the case.
+
 For example, here is one way to write a "Hello World" program which uses
 no (...) at all:
 
-    NOTE: line breaks introduced for readability(?), groups of nonempty
-    lines represent logical "lines" as used to define variables
-
     ABCCDEFDGCH
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ +.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ +.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ +++++++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ +.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++.
-
-    > ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++
-      ++++++++++ ++++++++++ ++++++++++ ++++++++++ ++++++++++ .
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++.
+    >+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
+    >++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++.
 
 The idea being that the variables A - H contain programs which move to an
 empty cell, then output the following characters:
@@ -253,6 +244,7 @@ output "Hello World":
 
 Now, this idea of a group of programs referring to each other sounds a lot
 like a graph.
+
 Taking again this example:
 
     +A
@@ -317,6 +309,7 @@ We might represent it as the following graph:
 
 This representation suggests an encoding of a BF program as a set of
 connected data structures.
+
 For instance, in C:
 
     struct bf_node {
