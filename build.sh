@@ -43,6 +43,8 @@ bagcom_builddir() {
     ACTION="$1"
     INDIR="$2"
 
+    OUTDIR="$SITE_OUTDIR/${INDIR#$SITE_INDIR/}"
+
     # $DIRCONFIGFILE: a file containing metadata about the pages in
     # $INDIR (for instance, about their "parent" page)
     DIRCONFIGFILE="$INDIR/dir.config"
@@ -59,6 +61,15 @@ bagcom_builddir() {
     # child pages (though they can override it)
     DIRCRUMBS="$CRUMBS"
 
+    if test "$ACTION" = "list"
+    then
+        # Create output directory
+        mkdir -p "$OUTDIR"
+
+        # Copy static assets (if present)
+        test ! -d "$INDIR/img" || cp -r "$INDIR/img" "$OUTDIR/img"
+    fi
+
     for INFILE in "$INDIR"/*
     do
         BASENAME="`basename -- "$INFILE"`"
@@ -69,7 +80,6 @@ bagcom_builddir() {
 
         OUTFILE="$SITE_OUTDIR/${INFILE#$SITE_INDIR/}"
         OUTFILE="${OUTFILE%.*}.html"
-        OUTDIR="`dirname -- "$OUTFILE"`"
 
         # $CONFIGFILE: a file containing metadata about the page whose
         # contents are in $INFILE
@@ -91,7 +101,6 @@ bagcom_builddir() {
 
                 # Touch the file so it can be found when generating
                 # CHILDPAGES
-                mkdir -p "$OUTDIR"
                 touch "$OUTFILE"
 
                 # Store the title somewhere we can find it when
