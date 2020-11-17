@@ -8,6 +8,10 @@ SITE_OUTDIR="dst"
 # Keep a newline around in a variable
 NL='
 '
+
+# Separator token for "code blocks"
+BLOCKSEP='```'
+
 # Markdown parser command, we feed it Markdown and expect HTML back
 MARKDOWN="markdown"
 
@@ -24,6 +28,78 @@ SITENAME="bayersglassey.com"
 LINEWIDTH=60
 LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
 THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
+
+chop() {
+    # Usage: chop DATA SEPARATOR
+    # Chops DATA into two substrings at the first occurrence of SEPARATOR.
+    # The substrings are returned in HEAD and TAIL.
+    HEAD="${1%%"$2"*}"
+    TAIL="${1#*"$2"}"
+}
+
+replace() {
+    # Usage: replace STR1 STR2 STRING
+    # Replaces first occurrence of STR1 with STR2 in STRING.
+    # Returns the result in REPLACED.
+    chop "$3" "$1"
+    REPLACED="$HEAD$2$TAIL"
+}
+
+_parseblocks() {
+    # Usage: parseblocks DATA
+    # Caller guarantees BLOCKSEP occurs within DATA.
+    # Parses DATA, replacing blocks with "{BLOCKxxx}" where xxx is a nonnegative integer.
+    # The parsed string is returned in PARSED.
+    # The data of each block xxx is stored in corresponding variables BLOCKxxx.
+    # The type of each block xxx is stored in corresponding variables BLOCKTYPExxx.
+    #
+    # Example of a block (in this case, the type is "json"):
+    #
+    #     ```json
+    #     {
+    #         "a": 1,
+    #         "b": 2
+    #     }
+    #     ```
+    #
+    # Example of iterating over the blocks:
+    #
+    #     for i in `seq "$BLOCKNUM"`
+    #     do eval "echo \"Block \$i (\$BLOCKTYPE$i): \$BLOCK$i\""
+    #     done
+    #
+
+    DATA="$1"
+    PARSED=""
+
+    while true
+    do
+        chop "$DATA" "$BLOCKSEP"
+        test "$HEAD" != "$DATA" || break
+
+        # In parseblocks(), BLOCKNUM is set to 0.
+        # We increment it here *before* using it, so first blocknum is 1.
+        # This is so that we can iterate over it using `seq $BLOCKNUM`.
+        BLOCKNUM="`expr "$BLOCKNUM" + 1`"
+
+        HEAD0="$HEAD"
+        chop "$TAIL" "$NL"
+        TYPE="$HEAD"
+        chop "$TAIL" "$NL$BLOCKSEP"
+        eval "BLOCK$BLOCKNUM=\"\$HEAD\""
+        eval "BLOCKTYPE$BLOCKNUM=\"\$TYPE\""
+        PARSED="$PARSED$HEAD0{BLOCK$BLOCKNUM}"
+        DATA="$TAIL"
+    done
+
+    PARSED="$PARSED$DATA"
+}
+
+parseblocks() {
+    # See _parseblocks() for its inner workings...
+    BLOCKNUM=0
+    _parseblocks "$@"
+}
 
 # And so it begins.
 echo "$THICKLINES" >&2
@@ -159,6 +235,14 @@ bagcom_buildfile() {
     # Slurp page contents
     BODY="`cat "$INFILE"`"
 
+    # Parse blocks, removing them from BODY.
+    # We will put them back in after BODY has been otherwise processed.
+    # This lets us implement e.g. custom syntax highlighting in
+    # Markdown pages: after BODY is processed as Markdown into HTML, we
+    # will put the processed blocks back in.
+    parseblocks "$BODY"
+    BODY="$PARSED"
+
     # Wrap the contents of .txt files in <pre>
     if test "$EXT" = "txt"
     then
@@ -192,6 +276,22 @@ bagcom_buildfile() {
         done
         BODY="$BODY</ul>"
     fi
+
+    # Put blocks back in, possibly processing them first.
+    for i in `seq "$BLOCKNUM"`
+    do
+        eval "TYPE=\$BLOCKTYPE$i"
+        eval "BLOCK=\$BLOCK$i"
+        case "$TYPE" in
+            fus)
+                BLOCK="<pre class=\"fus\">`echo "$BLOCK" | fus2html`</pre>"
+            ;;
+            *)
+            ;;
+        esac
+        replace "{BLOCK$i}" "$BLOCK" "$BODY"
+        BODY="$REPLACED"
+    done
 
     # Note the $NL (newlines), which we have to add manually, since
     # $HEADER/$FOOTER/$BODY all got their contents from commend expansion,
