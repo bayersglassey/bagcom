@@ -208,12 +208,11 @@ bagcom_buildfile() {
 
     # NOTE: We use "@" as the separator in sed's "s" operator, which means
     # cannot use it in a page's title!
-    PROCESSED_HEADER="` \
-        echo "$HEADER" \
-        | sed "s@{TITLE}@$TITLE@" \
-        | sed "s@{SITENAME}@$SITENAME@" \
-        | sed "s@{PARENTNAME}@$PARENTNAME@" \
-        | sed "s@{PARENTURL}@$PARENTURL@" \
+    PROCESSED_HEADER="`echo "$HEADER" | sed \
+        -e "s@{TITLE}@$TITLE@" \
+        -e "s@{SITENAME}@$SITENAME@" \
+        -e "s@{PARENTNAME}@$PARENTNAME@" \
+        -e "s@{PARENTURL}@$PARENTURL@" \
     `"
 
     # Remove any unneeded (according to this page's .config file)
