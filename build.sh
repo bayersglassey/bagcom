@@ -41,6 +41,12 @@ LINEWIDTH=60
 LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
 THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
 
+pageurl() {
+    PAGEURL_FILENAME="`echo "$1" | sed "s@/root/@/@"`"
+    shift
+    echo "/${PAGEURL_FILENAME#$SITE_OUTDIR/}"
+}
+
 htmlescape() {
     # Based on: https://stackoverflow.com/a/12873723
     sed \
@@ -204,8 +210,9 @@ bagcom_builddir() {
         # Only process files with these extensions
         test "$EXT" = "txt" -o "$EXT" = "html" -o "$EXT" = "md" -o "$EXT" = "fus" || continue
 
-        OUTFILE="$SITE_OUTDIR/${INFILE#$SITE_INDIR/}"
-        OUTFILE="${OUTFILE%.*}.html"
+        OUTFILE_RAW="$SITE_OUTDIR/${INFILE#$SITE_INDIR/}"
+        OUTFILE="${OUTFILE_RAW%.*}.html"
+        OUTFILE_RAW_URL="`pageurl "$OUTFILE_RAW"`"
 
         # $CONFIGFILE: a file containing metadata about the page whose
         # contents are in $INFILE
@@ -251,13 +258,23 @@ bagcom_builddir() {
 bagcom_buildfile() {
 
     # NOTE: We use "@" as the separator in sed's "s" operator, which means
-    # cannot use it in a page's title!
+    # we can't use that character in a page's title!
     PROCESSED_HEADER="`echo "$HEADER" | sed \
         -e "s@{TITLE}@$TITLE@" \
         -e "s@{SITENAME}@$SITENAME@" \
         -e "s@{PARENTNAME}@$PARENTNAME@" \
         -e "s@{PARENTURL}@$PARENTURL@" \
     `"
+
+    if test "$OUTFILE_RAW" != "$OUTFILE"
+    then
+        PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed \
+            -e "s@{RAWFILE}@$OUTFILE_RAW_URL@" \
+        `"
+    else
+        # Remove (with sed's "d" command) lines which contain "{RAWFILE}"
+        PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed '/{RAWFILE}/d'`"
+    fi
 
     # Remove any unneeded (according to this page's .config file)
     # breadcrumbs from header
@@ -313,7 +330,7 @@ bagcom_buildfile() {
         for CHILDPAGE_FILE in "$SITE_OUTDIR/$CHILDPAGES_DIR"/*.html
         do
             CHILDPAGE_BASENAME="`basename -- "$CHILDPAGE_FILE"`"
-            CHILDPAGE_URL="/${CHILDPAGE_FILE#$SITE_OUTDIR/}"
+            CHILDPAGE_URL="`pageurl "$CHILDPAGE_FILE"`"
             CHILDPAGE_TITLE="`cat "$CHILDPAGE_FILE.title"`"
             BODY="$BODY<li><a href=\"$CHILDPAGE_URL\">$CHILDPAGE_TITLE</a>$NL"
         done
@@ -339,6 +356,14 @@ bagcom_buildfile() {
         replace "{BLOCK$i}" "$BLOCK" "$BODY"
         BODY="$REPLACED"
     done
+
+    # Copy the raw input file over, so OUTFILE can include a link to it
+    # (But don't do it if INFILE is already .html, that is, if OUTFILE and
+    # OUTFILE_RAW are the same.)
+    if test "$OUTFILE_RAW" != "$OUTFILE"
+    then
+        cp "$INFILE" "$OUTFILE_RAW"
+    fi
 
     # Note the $NL (newlines), which we have to add manually, since
     # $HEADER/$FOOTER/$BODY all got their contents from commend expansion,
