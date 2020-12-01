@@ -1,0 +1,88 @@
+
+shapes:
+
+    ##########
+    # DOUBLE #
+    ##########
+
+    "double_sq":
+        prismels:
+            : "sq"  (0 0 0 0)  0 f eval: 1 + 1
+            : "sq"  (1 0 0 0)  0 f eval: 1 + 1
+            : "sq"  (0 0 0 1)  0 f eval: 1 + 1
+            : "sq"  (1 0 0 1)  0 f eval: 1 + 1
+
+    "double_tri":
+        prismels:
+            : "tri" (0 0 0 0)  0 f eval: 1 + 1
+            : "tri" (1 0 0 0)  0 f eval: 1 + 1
+            : "tri" (0 0 1 0)  0 f eval: 1 + 1
+            : "tri" (1 0 1 0)  6 f eval: 1 + 1
+
+    "double_dia":
+        prismels:
+            : "dia" (0 0 0 0)  0 f eval: 1 + 1
+            : "dia" (1 0 0 0)  0 f eval: 1 + 1
+            : "dia" (0 1 0 0)  0 f eval: 1 + 1
+            : "dia" (1 1 0 0)  0 f eval: 1 + 1
+
+
+    ##########
+    # TRIPLE #
+    ##########
+
+    "triple_sq":
+        shapes:
+            : "double_sq" (0 0 0 0) 0 f
+        prismels:
+            : "sq"  (2 0 0 0)  0 f eval: 1 + 1
+            : "sq"  (2 0 0 1)  0 f eval: 1 + 1
+            : "sq"  (2 0 0 2)  0 f eval: 1 + 1
+            : "sq"  (1 0 0 2)  0 f eval: 1 + 1
+            : "sq"  (0 0 0 2)  0 f eval: 1 + 1
+
+    "triple_tri":
+        shapes:
+            : "double_tri" (0 0 0 0) 0 f
+        prismels:
+            : "tri" (2 0 0 0)  0 f eval: 1 + 1
+            : "tri" (1 0 1 0)  0 f eval: 1 + 1
+            : "tri" (0 0 2 0)  0 f eval: 1 + 1
+            : "tri" (2 0 1 0)  6 f eval: 1 + 1
+            : "tri" (1 0 2 0)  6 f eval: 1 + 1
+
+    "triple_dia":
+        shapes:
+            : "double_dia" (0 0 0 0) 0 f
+        prismels:
+            : "dia" (2 0 0 0)  0 f eval: 1 + 1
+            : "dia" (2 1 0 0)  0 f eval: 1 + 1
+            : "dia" (2 2 0 0)  0 f eval: 1 + 1
+            : "dia" (1 2 0 0)  0 f eval: 1 + 1
+            : "dia" (0 2 0 0)  0 f eval: 1 + 1
+
+mappers:
+
+    "double":
+        solid
+        unit: 2 0 0 0
+        entries:
+            : "vert" -> "vert"
+            : "edge" -> "edge"
+            : "sq"   -> "double_sq"
+            : "tri"  -> "double_tri"
+            : "dia"  -> "double_dia"
+
+    "triple":
+        solid
+        unit: 3 0 0 0
+        entries:
+            : "vert" -> "vert"
+            : "edge" -> "edge"
+            : "sq"   -> "triple_sq"
+            : "tri"  -> "triple_tri"
+            : "dia"  -> "triple_dia"
+
+    "quadruple": solid map ("double") ("double")
+
+    "octuple": solid map ("double") ("quadruple")

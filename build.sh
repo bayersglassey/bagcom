@@ -15,11 +15,23 @@ BLOCKSEP='```'
 # Markdown parser command, we feed it Markdown and expect HTML back
 MARKDOWN="markdown"
 
-# Command which converts .fus to .html
+# Command which converts .fus to .html (from geom2018 repo)
 LEXERTOOL="lexertool"
 fus2html() {
     "$LEXERTOOL" -r --html
 }
+
+# Directory containing the .fus files used by blocks of type "fusfig"
+# (and related directories...)
+FUSFIG_DIR="fusfig/figs"
+FUSFIG_OUTDIR="fusfig/dst"
+FUSFIG_STATIC="figs"
+FUSFIG_STATICDIR="$SITE_OUTDIR/$FUSFIG_STATIC"
+FUSFIG_EXT="png"
+
+# The minieditor command from geom2018 repo
+MINIEDITOR="minieditor --pal fusfig/pal.fus --font fusfig/font.fus --fonts fusfig/fonts.fus"
+MINIEDITOR_SCREENSHOT="screen.bmp"
 
 # Name of the website we're building
 SITENAME="bayersglassey.com"
@@ -111,15 +123,37 @@ parseblocks() {
     _parseblocks "$@"
 }
 
+fusfig() {
+    # Generate a figure from an rgraph in a .fus file.
+    # Writes resulting image's filename to stdout.
+    FUSFIG_FILENAME="$1"
+    FUSFIG_RGRAPH="$2"
+    shift 2
+
+    FUSFIG_OUTSUBDIR="$FUSFIG_OUTDIR/${FUSFIG_FILENAME%.fus}"
+    mkdir -p "$FUSFIG_OUTSUBDIR"
+    FUSFIG_OUTFILE="$FUSFIG_OUTSUBDIR/$FUSFIG_RGRAPH.$FUSFIG_EXT"
+    FUSFIG_STATICFILE="/$FUSFIG_STATIC/${FUSFIG_FILENAME%.fus}/$FUSFIG_RGRAPH.$FUSFIG_EXT"
+
+    echo "Building fusfig: $FUSFIG_OUTFILE" 1>&2
+    echo "  $MINIEDITOR -f \"$FUSFIG_DIR/$FUSFIG_FILENAME\" -n \"$FUSFIG_RGRAPH\" $@ --nocontrols" 1>&2
+
+    $MINIEDITOR -f "$FUSFIG_DIR/$FUSFIG_FILENAME" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --nogui
+    convert "$MINIEDITOR_SCREENSHOT" "$FUSFIG_OUTFILE"
+    echo "$FUSFIG_STATICFILE"
+}
+
 # And so it begins.
 echo "$THICKLINES" >&2
 echo "Building site!" >&2
 echo "Source directory: $SITE_INDIR" >&2
 echo "Output directory: $SITE_OUTDIR" >&2
 
-# Create output directory
+# Create output directories
 rm -rf "$SITE_OUTDIR"
 mkdir -p "$SITE_OUTDIR"
+rm -rf "$FUSFIG_OUTDIR"
+mkdir -p "$FUSFIG_OUTDIR"
 
 # Slurp header & footer HTML
 HEADERFILE="$SITE_INDIR/header.html"
@@ -295,6 +329,9 @@ bagcom_buildfile() {
             fus)
                 BLOCK="<pre class=\"fus\">`echo "$BLOCK" | fus2html`</pre>"
             ;;
+            fusfig)
+                BLOCK="<img src=\"`fusfig $BLOCK`\">"
+            ;;
             *)
                 BLOCK="<pre class=\"block-$TYPE\">`echo "$BLOCK" | htmlescape`</pre>"
             ;;
@@ -343,6 +380,7 @@ rmdir "$SITE_OUTDIR/root"
 
 # Copy static assets
 cp -r img/ "$SITE_OUTDIR/img/"
+cp -r "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
 cp -r style/ "$SITE_OUTDIR/style/"
 
 # Doooone!

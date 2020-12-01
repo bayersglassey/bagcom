@@ -1,0 +1,52 @@
+
+import "fusfig/prismels.fus"
+import "fusfig/double.fus"
+import "fusfig/palmappers.fus"
+
+shapes:
+    "fig0": map ("octuple") :
+        shapes:
+            : "sq"  (-2 0 0 0) 0 f "red"
+            : "tri" ( 0 0 0 0) 0 f "grn"
+            : "dia" ( 2 0 0 0) 0 f "wht"
+
+    "_fig1_third":
+        shapes:
+            : "tri" ( 0 0 0 0)  0 f "l.grn"
+            : "tri" ( 0 0 0 0)  2 f "l.blu"
+
+            : "sq"  ( 1 0 0 0)  1 f "l.red"
+            : "sq"  ( 0 0 1 0)  3 f "l.red"
+
+            : "tri" ( 0 0 1 0)  1 f "l.ylw"
+            : "tri" (-1 0 1 0)  3 f "l.ylw"
+
+    "_fig1":
+        shapes:
+            : "_fig1_third" (0 0 0 0)  0 f
+            : "_fig1_third" (0 0 0 0)  4 f
+            : "_fig1_third" (0 0 0 0)  8 f
+
+    "fig1": map ("octuple") :
+        shapes:
+            : "_fig1" (0 0 0 0) 0 f
+
+    "_fig2_line":
+        shapes:
+            : "_fig1" eval(( 1  1  1  0) * -2)  0 f
+            : "_fig1" eval(( 1  1  1  0) * -1)  0 f
+            : "_fig1" eval(( 1  1  1  0) *  0)  0 f
+            : "_fig1" eval(( 1  1  1  0) *  1)  0 f
+            : "_fig1" eval(( 1  1  1  0) *  2)  0 f
+
+    "_fig2":
+        shapes:
+            : "_fig2_line" eval(( 2  1 -1 -1) * -2)  0 f
+            : "_fig2_line" eval(( 2  1 -1 -1) * -1)  0 f
+            : "_fig2_line" eval(( 2  1 -1 -1) *  0)  0 f
+            : "_fig2_line" eval(( 2  1 -1 -1) *  1)  0 f
+            : "_fig2_line" eval(( 2  1 -1 -1) *  2)  0 f
+
+    "fig2": map ("octuple") :
+        shapes:
+            : "_fig2" (0 0 0 0) 0 f
