@@ -29,6 +29,16 @@ LINEWIDTH=60
 LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
 THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
 
+htmlescape() {
+    # Based on: https://stackoverflow.com/a/12873723
+    sed \
+        -e 's/&/\&amp;/g' \
+        -e 's/</\&lt;/g' \
+        -e 's/>/\&gt;/g' \
+        -e 's/"/\&quot;/g' \
+        -e 's/'"'"'/\&#39;/g'
+}
+
 chop() {
     # Usage: chop DATA SEPARATOR
     # Chops DATA into two substrings at the first occurrence of SEPARATOR.
@@ -286,6 +296,7 @@ bagcom_buildfile() {
                 BLOCK="<pre class=\"fus\">`echo "$BLOCK" | fus2html`</pre>"
             ;;
             *)
+                BLOCK="<pre class=\"block-$TYPE\">`echo "$BLOCK" | htmlescape`</pre>"
             ;;
         esac
         replace "{BLOCK$i}" "$BLOCK" "$BODY"
