@@ -17,19 +17,19 @@ But that name sucks, so here we are.
 
 In my notes, I sketch various sets of prismels, but there is a particular set which I love the most:
 
-```fusfig
+```fusfig header
 prismels.fus fig0 -p -10 10 -s 120 40
 ```
 
 You can build really nice patterns out of these shapes, of which my favourite is probably the dodecahedron:
 
-```fusfig
+```fusfig header
 prismels.fus fig1 -s 100 100
 ```
 
 What I like about them is that you can glue a bunch of them together into a repeating pattern:
 
-```fusfig
+```fusfig header
 prismels.fus fig2 -s 400 270
 ```
 

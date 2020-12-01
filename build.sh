@@ -23,7 +23,7 @@ fus2html() {
 
 # Directory containing the .fus files used by blocks of type "fusfig"
 # (and related directories...)
-FUSFIG_DIR="fusfig/figs"
+FUSFIG_DIR="src/figures"
 FUSFIG_OUTDIR="fusfig/dst"
 FUSFIG_STATIC="figs"
 FUSFIG_STATICDIR="$SITE_OUTDIR/$FUSFIG_STATIC"
@@ -42,6 +42,7 @@ LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
 THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
 
 pageurl() {
+    # Usage: pageurl OUTFILE
     PAGEURL_FILENAME="`echo "$1" | sed "s@/root/@/@"`"
     shift
     echo "/${PAGEURL_FILENAME#$SITE_OUTDIR/}"
@@ -131,22 +132,34 @@ parseblocks() {
 
 fusfig() {
     # Generate a figure from an rgraph in a .fus file.
-    # Writes resulting image's filename to stdout.
-    FUSFIG_FILENAME="$1"
-    FUSFIG_RGRAPH="$2"
-    shift 2
+    # Writes an <img> tag for the resulting image to stdout.
+    FUSFIG_TYPE="$1"
+    FUSFIG_FILENAME="$2"
+    FUSFIG_RGRAPH="$3"
+    shift 3
 
+    FUSFIG_INFILE="$FUSFIG_DIR/$FUSFIG_FILENAME"
     FUSFIG_OUTSUBDIR="$FUSFIG_OUTDIR/${FUSFIG_FILENAME%.fus}"
     mkdir -p "$FUSFIG_OUTSUBDIR"
     FUSFIG_OUTFILE="$FUSFIG_OUTSUBDIR/$FUSFIG_RGRAPH.$FUSFIG_EXT"
     FUSFIG_STATICFILE="/$FUSFIG_STATIC/${FUSFIG_FILENAME%.fus}/$FUSFIG_RGRAPH.$FUSFIG_EXT"
 
-    echo "Building fusfig: $FUSFIG_OUTFILE" 1>&2
-    echo "  $MINIEDITOR -f \"$FUSFIG_DIR/$FUSFIG_FILENAME\" -n \"$FUSFIG_RGRAPH\" $@ --nocontrols" 1>&2
+    echo "Building fus figure: $FUSFIG_OUTFILE" 1>&2
+    echo "  $MINIEDITOR -f \"$FUSFIG_INFILE\" -n \"$FUSFIG_RGRAPH\" $@ --nocontrols" 1>&2
 
-    $MINIEDITOR -f "$FUSFIG_DIR/$FUSFIG_FILENAME" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --nogui
+    $MINIEDITOR -f "$FUSFIG_INFILE" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --nogui
     convert "$MINIEDITOR_SCREENSHOT" "$FUSFIG_OUTFILE"
-    echo "$FUSFIG_STATICFILE"
+
+    FUSFIG_FILENAME_OUTFILE_RAW="$SITE_OUTDIR/${FUSFIG_INFILE#$SITE_INDIR/}"
+    FUSFIG_FILENAME_OUTFILE="${FUSFIG_FILENAME_OUTFILE_RAW%.*}.html"
+    FUSFIG_FILENAME_OUTFILE_URL="`pageurl "$FUSFIG_FILENAME_OUTFILE"`"
+
+    case "$FUSFIG_TYPE" in
+    *header*)
+        echo "<h4><i>$FUSFIG_RGRAPH</i> (defined in <a href=\"$FUSFIG_FILENAME_OUTFILE_URL\">$FUSFIG_FILENAME</a>)</h4>"
+    esac
+
+    echo "<img src=\"$FUSFIG_STATICFILE\">"
 }
 
 # And so it begins.
@@ -187,7 +200,12 @@ bagcom_builddir() {
     CRUMBS=0
 
     # ...ok, set the variables please
-    . "$DIRCONFIGFILE"
+    if test -f "$DIRCONFIGFILE"
+    then
+        . "$DIRCONFIGFILE"
+    else
+        echo "...skipping missing dirconfig file: $CONFIGFILE" >&2
+    fi
 
     # Save $CRUMBS for this directory, it will be "inherited" by
     # child pages (though they can override it)
@@ -219,12 +237,17 @@ bagcom_builddir() {
         CONFIGFILE="$INFILE.config"
 
         # Variables which can be set by $CONFIGFILE
-        TITLE=""
+        TITLE="${BASENAME/.*}"
         CRUMBS="$DIRCRUMBS"
         CHILDPAGES_DIR=""
 
         # ...ok, set the variables please
-        . "$CONFIGFILE"
+        if test -f "$CONFIGFILE"
+        then
+            . "$CONFIGFILE"
+        else
+            echo "...skipping missing config file: $CONFIGFILE" >&2
+        fi
 
         case "$ACTION" in
             list)
@@ -346,8 +369,8 @@ bagcom_buildfile() {
             fus)
                 BLOCK="<pre class=\"fus\">`echo "$BLOCK" | fus2html`</pre>"
             ;;
-            fusfig)
-                BLOCK="<img src=\"`fusfig $BLOCK`\">"
+            fusfig*)
+                BLOCK="`fusfig "$TYPE" $BLOCK`"
             ;;
             *)
                 BLOCK="<pre class=\"block-$TYPE\">`echo "$BLOCK" | htmlescape`</pre>"
