@@ -44,7 +44,6 @@ THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
 pageurl() {
     # Usage: pageurl OUTFILE
     PAGEURL_FILENAME="`echo "$1" | sed "s@/root/@/@"`"
-    shift
     echo "/${PAGEURL_FILENAME#$SITE_OUTDIR/}"
 }
 
@@ -74,9 +73,8 @@ replace() {
     REPLACED="$HEAD$2$TAIL"
 }
 
-_parseblocks() {
+parseblocks() {
     # Usage: parseblocks DATA
-    # Caller guarantees BLOCKSEP occurs within DATA.
     # Parses DATA, replacing blocks with "{BLOCKxxx}" where xxx is a nonnegative integer.
     # The parsed string is returned in PARSED.
     # The data of each block xxx is stored in corresponding variables BLOCKxxx.
@@ -100,13 +98,14 @@ _parseblocks() {
 
     DATA="$1"
     PARSED=""
+    BLOCKNUM=0
 
     while true
     do
         chop "$DATA" "$BLOCKSEP"
         test "$HEAD" != "$DATA" || break
 
-        # In parseblocks(), BLOCKNUM is set to 0.
+        # BLOCKNUM was initialized to 0 outside the loop.
         # We increment it here *before* using it, so first blocknum is 1.
         # This is so that we can iterate over it using `seq $BLOCKNUM`.
         BLOCKNUM="`expr "$BLOCKNUM" + 1`"
@@ -122,12 +121,6 @@ _parseblocks() {
     done
 
     PARSED="$PARSED$DATA"
-}
-
-parseblocks() {
-    # See _parseblocks() for its inner workings...
-    BLOCKNUM=0
-    _parseblocks "$@"
 }
 
 fusfig() {
@@ -154,6 +147,7 @@ fusfig() {
     FUSFIG_FILENAME_OUTFILE="${FUSFIG_FILENAME_OUTFILE_RAW%.*}.html"
     FUSFIG_FILENAME_OUTFILE_URL="`pageurl "$FUSFIG_FILENAME_OUTFILE"`"
 
+    # Ganky "extensions" to the fusfig block type...
     case "$FUSFIG_TYPE" in
     *header*)
         echo "<h4><i>$FUSFIG_RGRAPH</i> (defined in <a href=\"$FUSFIG_FILENAME_OUTFILE_URL\">$FUSFIG_FILENAME</a>)</h4>"
