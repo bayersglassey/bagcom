@@ -140,7 +140,7 @@ fusfig() {
     echo "Building fus figure: $FUSFIG_OUTFILE" 1>&2
     echo "  $MINIEDITOR -f \"$FUSFIG_INFILE\" -n \"$FUSFIG_RGRAPH\" $@ --nocontrols" 1>&2
 
-    $MINIEDITOR -f "$FUSFIG_INFILE" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --nogui
+    $MINIEDITOR -f "$FUSFIG_INFILE" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --screenshot
     convert "$MINIEDITOR_SCREENSHOT" "$FUSFIG_OUTFILE"
 
     FUSFIG_FILENAME_OUTFILE_RAW="$SITE_OUTDIR/${FUSFIG_INFILE#$SITE_INDIR/}"
