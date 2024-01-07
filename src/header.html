@@ -4,6 +4,23 @@
 <link rel="icon" type="image/png" href="/img/player.png">
 <link rel="stylesheet" href="/style/bagcom.css">
 <link rel="stylesheet" href="/style/fus.css">
+<script>
+(window.onload = function() {
+
+    /* Only play 1 audio element at a time */
+    var audio_elems = document.getElementsByTagName('audio');
+    for (var elem of audio_elems) {
+        elem.onplay = function(e) {
+            var elem = e.target;
+            for (var other_elem of audio_elems) {
+                if (elem === other_elem) continue;
+                other_elem.pause();
+            }
+        }
+    }
+
+});
+</script>
 </head>
 <body>
 <div class="panel">
