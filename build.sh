@@ -1,5 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 set -euo pipefail
+
+repeat() {
+    # Output a string consisting of $1 copies of character $2
+    printf "%${1}s" | tr ' ' "$2"
+}
+
+# Binaries from my geom2018 repo live here
+GEOMDIR="../geom2018/bin"
 
 # Input & output directories of this script
 SITE_INDIR="src"
@@ -12,11 +20,8 @@ NL='
 # Separator token for "code blocks"
 BLOCKSEP='```'
 
-# Markdown parser command, we feed it Markdown and expect HTML back
-MARKDOWN="markdown"
-
 # Command which converts .fus to .html (from geom2018 repo)
-LEXERTOOL="lexertool"
+LEXERTOOL="$GEOMDIR/lexertool"
 fus2html() {
     "$LEXERTOOL" -r --html
 }
@@ -30,7 +35,10 @@ FUSFIG_STATICDIR="$SITE_OUTDIR/$FUSFIG_STATIC"
 FUSFIG_EXT="png"
 
 # The minieditor command from geom2018 repo
-MINIEDITOR="minieditor --pal fusfig/pal.fus --font fusfig/font.fus --fonts fusfig/fonts.fus"
+MINIEDITOR="$GEOMDIR/minieditor"
+minieditor() {
+    "$MINIEDITOR" --pal fusfig/pal.fus --font fusfig/font.fus --fonts fusfig/fonts.fus "$@"
+}
 MINIEDITOR_SCREENSHOT="screen.bmp"
 
 # Name of the website we're building
@@ -38,8 +46,45 @@ SITENAME="bayersglassey.com"
 
 # Set up variables so we can easily print horizontal lines
 LINEWIDTH=60
-LINES="`printf %${LINEWIDTH}s | tr ' ' '-'`"
-THICKLINES="`printf %${LINEWIDTH}s | tr ' ' '='`"
+THINLINE="$(repeat "$LINEWIDTH" '-')"
+THICKLINE="$(repeat "$LINEWIDTH" '#')"
+
+
+log_depth=0
+log() {
+    repeat "$log_depth" "  "
+    echo "=== $@" >&2
+}
+
+do_with_log() {
+    log "Executing: $@"
+    "$@"
+}
+
+print_thinline() {
+    echo "$THINLINE" >&2
+}
+
+print_thickline() {
+    echo "$THICKLINE" >&2
+}
+
+require_cmd() {
+    command -v "$1" >/dev/null || {
+        log "Missing required command: $1"
+        exit 1
+    }
+}
+
+# Markdown parser command, we feed it Markdown and expect HTML back.
+# Currently using `apt install markdown`
+require_cmd markdown
+
+require_cmd "$LEXERTOOL"
+require_cmd "$MINIEDITOR"
+
+
+#############################################################################
 
 pageurl() {
     # Usage: pageurl OUTFILE
@@ -133,15 +178,13 @@ fusfig() {
 
     FUSFIG_INFILE="$FUSFIG_DIR/$FUSFIG_FILENAME"
     FUSFIG_OUTSUBDIR="$FUSFIG_OUTDIR/${FUSFIG_FILENAME%.fus}"
-    mkdir -p "$FUSFIG_OUTSUBDIR"
+    do_with_log mkdir -p "$FUSFIG_OUTSUBDIR"
     FUSFIG_OUTFILE="$FUSFIG_OUTSUBDIR/$FUSFIG_RGRAPH.$FUSFIG_EXT"
     FUSFIG_STATICFILE="/$FUSFIG_STATIC/${FUSFIG_FILENAME%.fus}/$FUSFIG_RGRAPH.$FUSFIG_EXT"
 
-    echo "Building fus figure: $FUSFIG_OUTFILE" 1>&2
-    echo "  $MINIEDITOR -f \"$FUSFIG_INFILE\" -n \"$FUSFIG_RGRAPH\" $@ --nocontrols" 1>&2
-
-    $MINIEDITOR -f "$FUSFIG_INFILE" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --screenshot
-    convert "$MINIEDITOR_SCREENSHOT" "$FUSFIG_OUTFILE"
+    log "Building fus figure: $FUSFIG_OUTFILE"
+    do_with_log minieditor -f "$FUSFIG_INFILE" -n "$FUSFIG_RGRAPH" "$@" -q --nocontrols --screenshot
+    do_with_log convert "$MINIEDITOR_SCREENSHOT" "$FUSFIG_OUTFILE"
 
     FUSFIG_FILENAME_OUTFILE_RAW="$SITE_OUTDIR/${FUSFIG_INFILE#$SITE_INDIR/}"
     FUSFIG_FILENAME_OUTFILE="${FUSFIG_FILENAME_OUTFILE_RAW%.*}.html"
@@ -157,16 +200,16 @@ fusfig() {
 }
 
 # And so it begins.
-echo "$THICKLINES" >&2
-echo "Building site!" >&2
-echo "Source directory: $SITE_INDIR" >&2
-echo "Output directory: $SITE_OUTDIR" >&2
+print_thickline
+log "Building site!"
+log "Source directory: $SITE_INDIR"
+log "Output directory: $SITE_OUTDIR"
 
 # Create output directories
-rm -rf "$SITE_OUTDIR"
-mkdir -p "$SITE_OUTDIR"
-rm -rf "$FUSFIG_OUTDIR"
-mkdir -p "$FUSFIG_OUTDIR"
+do_with_log rm -rf "$SITE_OUTDIR"
+do_with_log mkdir -p "$SITE_OUTDIR"
+do_with_log rm -rf "$FUSFIG_OUTDIR"
+do_with_log mkdir -p "$FUSFIG_OUTDIR"
 
 # Slurp header & footer HTML
 HEADERFILE="$SITE_INDIR/header.html"
@@ -188,32 +231,35 @@ bagcom_builddir() {
     # $INDIR (for instance, about their "parent" page)
     DIRCONFIGFILE="$INDIR/dir.config"
 
+    print_thinline
+    log "Building dir (action=$ACTION): $INDIR -> $OUTDIR"
+
     # Variables which can be set by $DIRCONFIGFILE
     PARENTNAME=""
     PARENTURL=""
-    CRUMBS=0
 
     # ...ok, set the variables please
     if test -f "$DIRCONFIGFILE"
     then
+        log "Using dirconfig file: $DIRCONFIGFILE"
         . "$DIRCONFIGFILE"
     else
-        echo "...skipping missing dirconfig file: $CONFIGFILE" >&2
+        log "...skipping missing dirconfig file: $DIRCONFIGFILE"
     fi
 
-    # Save $CRUMBS for this directory, it will be "inherited" by
-    # child pages (though they can override it)
-    DIRCRUMBS="$CRUMBS"
+    log "PARENTNAME=$PARENTNAME"
+    log "PARENTURL=$PARENTURL"
 
     if test "$ACTION" = "list"
     then
         # Create output directory
-        mkdir -p "$OUTDIR"
+        do_with_log mkdir -p "$OUTDIR"
 
         # Copy static assets (if present)
-        test ! -d "$INDIR/img" || cp -r "$INDIR/img" "$OUTDIR/img"
+        test ! -d "$INDIR/img" || do_with_log cp -r "$INDIR/img" "$OUTDIR/img"
     fi
 
+    : $(( log_depth++ ))
     for INFILE in "$INDIR"/*
     do
         BASENAME="`basename -- "$INFILE"`"
@@ -226,53 +272,59 @@ bagcom_builddir() {
         OUTFILE="${OUTFILE_RAW%.*}.html"
         OUTFILE_RAW_URL="`pageurl "$OUTFILE_RAW"`"
 
+        print_thinline
+        log "Processing file (action=$ACTION): $INFILE -> $OUTFILE"
+
         # $CONFIGFILE: a file containing metadata about the page whose
         # contents are in $INFILE
         CONFIGFILE="$INFILE.config"
 
         # Variables which can be set by $CONFIGFILE
         TITLE="${BASENAME/.*}"
-        CRUMBS="$DIRCRUMBS"
         CHILDPAGES_DIR=""
 
         # ...ok, set the variables please
         if test -f "$CONFIGFILE"
         then
+            log "Using config file: $CONFIGFILE"
             . "$CONFIGFILE"
         else
-            echo "...skipping missing config file: $CONFIGFILE" >&2
+            log "...skipping missing config file: $CONFIGFILE"
         fi
+
+        log "TITLE=$TITLE"
+        log "CHILDPAGES_DIR=$CHILDPAGES_DIR"
 
         case "$ACTION" in
             list)
-                echo "$LINES" >&2
-                echo "Listing: $INFILE" >&2
-                echo "Output: $OUTFILE" >&2
+                log "Listing: $INFILE"
+                log "Output: $OUTFILE"
 
                 # Touch the file so it can be found when generating
                 # CHILDPAGES
-                touch "$OUTFILE"
+                do_with_log touch "$OUTFILE"
 
                 # Store the title somewhere we can find it when
                 # generating CHILDPAGES
                 echo "$TITLE" >"$OUTFILE.title"
             ;;
             build)
-                echo "$LINES" >&2
-                echo "Building: $INFILE" >&2
-                echo "Output: $OUTFILE" >&2
+                log "Building: $INFILE"
+                log "Output: $OUTFILE"
                 bagcom_buildfile
-                echo "Done!" >&2
+                log "Done!"
             ;;
             *)
-                echo "Unrecognized action: $ACTION" >&2
+                "Unrecognized action: $ACTION"
                 exit 1
             ;;
         esac
     done
+    : $(( log_depth-- ))
 }
 
 bagcom_buildfile() {
+    log "Building file: $OUTFILE..."
 
     # NOTE: We use "@" as the separator in sed's "s" operator, which means
     # we can't use that character in a page's title!
@@ -295,14 +347,16 @@ bagcom_buildfile() {
 
     # Remove any unneeded (according to this page's .config file)
     # breadcrumbs from header
-    if test "$CRUMBS" -lt 2
+    if test "$PARENTURL" = "/"
     then
         # Remove (with sed's "d" command) lines which start with "{CRUMB2}"
+        log "*** REMOVING CRUMB2!"
         PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed '/^{CRUMB2}/d'`"
     fi
-    if test "$CRUMBS" -lt 1
+    if test "$OUTFILE" = "dst/root/index.html"
     then
         # Remove (with sed's "d" command) lines which start with "{CRUMB1}"
+        log "*** REMOVING CRUMB1!"
         PROCESSED_HEADER="`echo "$PROCESSED_HEADER" | sed '/^{CRUMB1}/d'`"
     fi
 
@@ -330,7 +384,7 @@ bagcom_buildfile() {
     # (Will fail, obviously, if you don't have a markdown parser installed)
     if test "$EXT" = "md"
     then
-        BODY="`echo "$BODY" | "$MARKDOWN"`"
+        BODY="`echo "$BODY" | markdown`"
     fi
 
     # Process .fus files
@@ -379,54 +433,59 @@ bagcom_buildfile() {
     # OUTFILE_RAW are the same.)
     if test "$OUTFILE_RAW" != "$OUTFILE"
     then
-        cp "$INFILE" "$OUTFILE_RAW"
+        do_with_log cp "$INFILE" "$OUTFILE_RAW"
     fi
 
     # Note the $NL (newlines), which we have to add manually, since
     # $HEADER/$FOOTER/$BODY all got their contents from commend expansion,
     # which removes trailing newlines (which is obnoxious).
+    log "Writing to $OUTFILE..."
     echo -n "$PROCESSED_HEADER$NL$BODY$NL$FOOTER" >"$OUTFILE"
 }
 
 
 # "List" (touch) output files, so we can automatically generate lists
 # of them in the HTML content of files which use CHILDPAGES_DIR
-echo "$THICKLINES" >&2
-echo "Listing files..." >&2
+print_thickline
+log "Listing files..."
 for INDIR in "$SITE_INDIR"/*/
 do
+    : $(( log_depth++ ))
     bagcom_builddir list "${INDIR%/}"
+    : $(( log_depth-- ))
 done
 
 # Actually build (generate the content of) the output files
-echo "$THICKLINES" >&2
-echo "Building files..." >&2
+print_thickline
+log "Building files..."
 for INDIR in "$SITE_INDIR"/*/
 do
+    : $(( log_depth++ ))
     bagcom_builddir build "${INDIR%/}"
+    : $(( log_depth-- ))
 done
 
-echo "$THICKLINES" >&2
-echo "Finishing up..." >&2
+print_thickline
+log "Finishing up..."
 
 # Clean up .title files
 for INDIR in "$SITE_INDIR"/*/
 do
     OUTDIR="$SITE_OUTDIR/${INDIR#$SITE_INDIR/}"
-    rm -f "$OUTDIR"/*.title
+    do_with_log rm -f "$OUTDIR"/*.title
 done
 
 # Move files from "root" subdirectory to the actual build output root
-mv "$SITE_OUTDIR/root"/* "$SITE_OUTDIR/"
-rmdir "$SITE_OUTDIR/root"
+do_with_log mv "$SITE_OUTDIR/root"/* "$SITE_OUTDIR/"
+do_with_log rmdir "$SITE_OUTDIR/root"
 
 # Copy static assets
-cp -r img/ "$SITE_OUTDIR/img/"
-cp -r "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
-cp -r style/ "$SITE_OUTDIR/style/"
+do_with_log cp -r img/ "$SITE_OUTDIR/img/"
+do_with_log cp -r "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
+do_with_log cp -r style/ "$SITE_OUTDIR/style/"
 
 # Doooone!
-echo "$THICKLINES" >&2
-echo "Build complete!" >&2
-echo "Source directory: $SITE_INDIR" >&2
-echo "Output directory: $SITE_OUTDIR" >&2
+print_thickline
+log "Build complete!"
+log "Source directory: $SITE_INDIR"
+log "Output directory: $SITE_OUTDIR"
