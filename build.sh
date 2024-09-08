@@ -602,6 +602,7 @@ copydir "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
 copydir "$BB_OUTDIR/" "$BB_STATICDIR/"
 copydir style/ "$SITE_OUTDIR/style/"
 copydir scripts/ "$SITE_OUTDIR/scripts/"
+copydir ../tape_game/ "$SITE_OUTDIR/tape_game/"
 
 # Doooone!
 print_thickline
