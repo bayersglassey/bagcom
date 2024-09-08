@@ -98,6 +98,15 @@ require_cmd "$MINIEDITOR"
 
 #############################################################################
 
+copydir() {
+    # Why rm -rf "$2" first?.. because cp -r "$1" "$2" will behave differently
+    # depending on whether "$2" already exists.
+    # If it already exists, cp will put everything *inside* it!..
+    # Which is not what we want.
+    do_with_log rm -rf "$2"
+    do_with_log cp -r "$1" "$2"
+}
+
 pageurl() {
     # Usage: pageurl OUTFILE
     PAGEURL_FILENAME="`echo "$1" | sed "s@/root/@/@"`"
@@ -217,7 +226,7 @@ get_projects() {
 }
 
 
-SKIP_PROJECTS=bytebeats
+SKIP_PROJECTS="${SKIP_PROJECTS-bytebeats}"
 if test "$#" = 0
 then
     BUILD_ALL=true
@@ -231,8 +240,12 @@ elif test "$1" = "-h" -o "$1" = "--help"
 then
     log "Usage: build.sh [PROJECT ...]"
     log "If no projects supplied, all will be built, except skipped ones."
+    log "When building all projects in that way, certain directories will be "
+    log "deleted & recreated from scratch."
     log "Here are all projects: $(get_projects | tr '\n' ' ')"
     log "Here are projects skipped by default: $SKIP_PROJECTS"
+    log "In order to build all projects, but not skip any, set the SKIP_PROJECTS"
+    log "env var to the empty string: SKIP_PROJECTS= ./build.sh"
     exit 0
 else
     BUILD_ALL=false
@@ -242,6 +255,7 @@ fi
 # And so it begins.
 print_thickline
 log "Building projects: $PROJECTS"
+log "Skipped projects: $SKIP_PROJECTS"
 log "Source directory: $SITE_INDIR"
 log "Output directory: $SITE_OUTDIR"
 
@@ -305,7 +319,7 @@ bagcom_builddir() {
         do_with_log mkdir -p "$OUTDIR"
 
         # Copy static assets (if present)
-        test ! -d "$INDIR/img" || do_with_log cp -r "$INDIR/img" "$OUTDIR/img"
+        test ! -d "$INDIR/img" || copydir "$INDIR/img" "$OUTDIR/img"
     fi
 
     : $(( log_depth++ ))
@@ -583,11 +597,11 @@ do_with_log mv "$SITE_OUTDIR/root"/* "$SITE_OUTDIR/"
 do_with_log rmdir "$SITE_OUTDIR/root"
 
 # Copy static assets
-do_with_log cp -r img/ "$SITE_OUTDIR/img/"
-do_with_log cp -r "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
-do_with_log cp -r "$BB_OUTDIR/" "$BB_STATICDIR/"
-do_with_log cp -r style/ "$SITE_OUTDIR/style/"
-do_with_log cp -r scripts/ "$SITE_OUTDIR/scripts/"
+copydir img/ "$SITE_OUTDIR/img/"
+copydir "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
+copydir "$BB_OUTDIR/" "$BB_STATICDIR/"
+copydir style/ "$SITE_OUTDIR/style/"
+copydir scripts/ "$SITE_OUTDIR/scripts/"
 
 # Doooone!
 print_thickline
