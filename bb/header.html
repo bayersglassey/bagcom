@@ -1,0 +1,15 @@
+<script src="/scripts/svg-pan-zoom-container@0.2.6.min.js"></script>
+<script>
+window.addEventListener('load', function() {
+    for (var elem of document.getElementsByClassName('svg-container')) {
+        svgPanZoomContainer.setScale(elem, 45, {maxScale: 1000});
+    }
+});
+</script>
+<style>
+.bb-links {
+    font-size: small;
+    padding: 0.25em;
+    background: #eee;
+}
+</style>

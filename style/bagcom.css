@@ -17,3 +17,13 @@ pre {
 
     overflow: auto; /* So <pre> with lots of stuff can be scrolled */
 }
+
+pre.bb-pre {
+    border-radius: 0;
+    margin: 0;
+}
+
+.svg-container {
+    border: solid 1px #eee;
+    border-radius: 5px;
+}

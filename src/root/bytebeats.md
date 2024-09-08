@@ -25,11 +25,17 @@ compose() {
 compose 't&t>>8'
 ```
 
+**TODO: study this: https://www.youtube.com/watch?v=9O7Qsbjj8w4**
+
 Some examples from [viznut](http://viznut.fi/demos/unix/bytebeat_formulas.txt):
 
 ### sawtooth
-```bb sawtooth
+```bb sawtooth chans=1 inline-svg t1=5000
 t
+```
+
+```bb sawtooth-2 chans=1 inline-svg t1=5000
+t*2
 ```
 
 ### sierpinski harmony
@@ -44,5 +50,5 @@ t*(42&t>>10)
 
 ### I think this one is my favourite...
 ```bb favourite
-t*(t>>9|t>>13)&16
+t*(t>>(9-4*c)|t>>13)&16
 ```
