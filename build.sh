@@ -602,7 +602,16 @@ copydir "$FUSFIG_OUTDIR/" "$FUSFIG_STATICDIR/"
 copydir "$BB_OUTDIR/" "$BB_STATICDIR/"
 copydir style/ "$SITE_OUTDIR/style/"
 copydir scripts/ "$SITE_OUTDIR/scripts/"
-copydir ../tape_game/ "$SITE_OUTDIR/tape_game/"
+
+# Copy the tape game :O
+copy_tape_game() (
+    src="$1"
+    dst="$2"
+    rm -rf "$dst"
+    mkdir "$dst"
+    cp -r "$src"/*.html "$src"/*.css "$src"/*.js "$dst"/
+)
+copy_tape_game ../tape_game/ "$SITE_OUTDIR/tape_game"
 
 # Doooone!
 print_thickline
